@@ -7,6 +7,7 @@ def fetch_news(endpoint):
     if response.status_code == 200:
         return response.json()
     else:
+        st.error(f"Error fetching data from {endpoint}. Status code: {response.status_code}")
         return None
 
 # Streamlit app
@@ -24,7 +25,7 @@ def main():
     if latest_news_data:
         st.header(f"Latest News for {stock_symbol}")
         for news_item in latest_news_data:
-            st.write(f"- {news_item['title']}")
+            st.write(f"- {news_item.get('title', 'N/A')}")
 
     # Display business news
     business_news_endpoint = "https://mc-api-j0rn.onrender.com/api/business_news"
@@ -33,7 +34,7 @@ def main():
     if business_news_data:
         st.header("Business News")
         for news_item in business_news_data:
-            st.write(f"- {news_item['title']}")
+            st.write(f"- {news_item.get('title', 'N/A')}")
 
     # Display a list of stocks
     stock_list_endpoint = "https://mc-api-j0rn.onrender.com/api/list"
@@ -42,7 +43,9 @@ def main():
     if stock_list_data:
         st.sidebar.header("Stock List")
         for stock_item in stock_list_data:
-            st.sidebar.write(f"- {stock_item['symbol']} ({stock_item['name']})")
+            symbol = stock_item.get('symbol', 'N/A')
+            name = stock_item.get('name', 'N/A')
+            st.sidebar.write(f"- {symbol} ({name})")
 
 if __name__ == "__main__":
     main()
