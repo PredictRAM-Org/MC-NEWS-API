@@ -1,51 +1,44 @@
-import streamlit as st
 import requests
+from bs4 import BeautifulSoup
+import streamlit as st
 
-# Function to fetch news data based on the provided API endpoint
-def fetch_news(endpoint):
-    response = requests.get(endpoint)
+# Function to fetch stock news from Moneycontrol
+def fetch_moneycontrol_news(stock_symbol):
+    base_url = f'https://www.moneycontrol.com/news/business/companies/{stock_symbol}.html'
+    response = requests.get(base_url)
+
     if response.status_code == 200:
-        return response.json()
+        soup = BeautifulSoup(response.text, 'html.parser')
+        news_elements = soup.find_all('div', class_='fltlft news-con')
+        news_list = []
+
+        for news_element in news_elements:
+            title = news_element.find('h2').text.strip()
+            link = news_element.find('a')['href']
+            news_list.append({'title': title, 'link': link})
+
+        return news_list
+
     else:
-        st.error(f"Error fetching data from {endpoint}. Status code: {response.status_code}")
+        st.error(f"Error fetching data from Moneycontrol. Status code: {response.status_code}")
         return None
 
 # Streamlit app
 def main():
-    st.title("Stock News App")
+    st.title("Moneycontrol Stock News Scraper")
 
     # Sidebar for user input
-    stock_symbol = st.sidebar.text_input("Enter Stock Symbol", value='AAPL')
+    stock_symbol = st.sidebar.text_input("Enter Stock Symbol", value='tatasteel')
     search_button = st.sidebar.button("Search")
 
-    # Fetch and display latest news
-    latest_news_endpoint = f"https://mc-api-j0rn.onrender.com/api/latest_news?symbol={stock_symbol}"
-    latest_news_data = fetch_news(latest_news_endpoint)
+    if search_button:
+        # Fetch and display stock news
+        news_data = fetch_moneycontrol_news(stock_symbol)
 
-    if latest_news_data:
-        st.header(f"Latest News for {stock_symbol}")
-        for news_item in latest_news_data:
-            st.write(f"- {news_item.get('title', 'N/A')}")
-
-    # Display business news
-    business_news_endpoint = "https://mc-api-j0rn.onrender.com/api/business_news"
-    business_news_data = fetch_news(business_news_endpoint)
-
-    if business_news_data:
-        st.header("Business News")
-        for news_item in business_news_data:
-            st.write(f"- {news_item.get('title', 'N/A')}")
-
-    # Display a list of stocks
-    stock_list_endpoint = "https://mc-api-j0rn.onrender.com/api/list"
-    stock_list_data = fetch_news(stock_list_endpoint)
-
-    if stock_list_data:
-        st.sidebar.header("Stock List")
-        for stock_item in stock_list_data:
-            symbol = stock_item.get('symbol', 'N/A')
-            name = stock_item.get('name', 'N/A')
-            st.sidebar.write(f"- {symbol} ({name})")
+        if news_data:
+            st.header(f"Latest Stock News for {stock_symbol.upper()}")
+            for news_item in news_data:
+                st.write(f"- [{news_item['title']}]({news_item['link']})")
 
 if __name__ == "__main__":
     main()
